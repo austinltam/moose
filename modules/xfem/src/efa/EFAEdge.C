@@ -127,8 +127,9 @@ EFAEdge::getNodeMasters(EFANode * node,
 //}
 
 void
-EFAEdge::addIntersection(double position, EFANode * embedded_node_tmp, EFANode * from_node)
+EFAEdge::addIntersection(double position, EFANode * embedded_node_tmp, EFANode * from_node, unsigned int cut_plane_idx)
 {
+    embedded_node_tmp->addCutPlaneID(cut_plane_idx);
   _embedded_nodes.push_back(embedded_node_tmp);
   if (from_node == _edge_node1)
     _intersection_x.push_back(position);
@@ -232,6 +233,25 @@ EFAEdge::hasIntersectionAtPosition(double position, EFANode * from_node) const
   }
   return has_int;
 }
+
+//WIP: Can we have the same cut plane cutting the same edge multiple times?
+//bool
+//EFAEdge::hasIntersectionCutPlane(unsigned int cutPlaneID) const
+//{
+//  bool has_int = false;
+//  if (hasIntersection())
+//  {
+//    for (unsigned int i = 0; i < _embedded_nodes.size(); ++i)
+//    {
+//      if (_embedded_node[i].hasCutPlaneID(cutPlaneID))
+//      {
+//        has_int = true;
+//        break;
+//      }
+//    }
+//  }
+//  return has_int;
+//}
 
 double
 EFAEdge::getIntersection(unsigned int emb_id, EFANode * from_node) const

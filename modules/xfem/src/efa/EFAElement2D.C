@@ -1706,12 +1706,14 @@ EFAElement2D::fragmentEdgeAlreadyCut(unsigned int ElemEdgeID) const
   return has_cut;
 }
 
+//WIP: Fixed?
 void
 EFAElement2D::addEdgeCut(unsigned int edge_id,
                          double position,
                          EFANode * embedded_node,
                          std::map<unsigned int, EFANode *> & EmbeddedNodes,
-                         bool add_to_neighbor)
+                         bool add_to_neighbor,
+						 unsigned int cut_plane_idx)
 {
   EFANode * local_embedded = NULL;
   EFANode * edge_node1 = _edges[edge_id]->getNode(0);
@@ -1725,13 +1727,16 @@ EFAElement2D::addEdgeCut(unsigned int edge_id,
     EFANode * old_emb = _edges[edge_id]->getEmbeddedNode(emb_id);
     if (embedded_node && embedded_node != old_emb)
     {
-      EFAError("Attempting to add edge intersection when one already exists with different node.",
-               " elem: ",
-               _id,
-               " edge: ",
-               edge_id,
-               " position: ",
-               position);
+    	//Check this, pointer might be wrong
+    	old_emb->addCutPlaneID(cut_plane_idx);
+    	return;
+//      EFAError("Attempting to add edge intersection when one already exists with different node.",
+//               " elem: ",
+//               _id,
+//               " edge: ",
+//               edge_id,
+//               " position: ",
+//               position);
     }
     local_embedded = old_emb;
   }
@@ -1768,7 +1773,7 @@ EFAElement2D::addEdgeCut(unsigned int edge_id,
       else
       {
         EFAWarning("attempting to add new cut to a cut fragment edge");
-        add2elem = false; // DO NOT ADD INTERSECT IN THIS CASE
+//        add2elem = false; // DO NOT ADD INTERSECT IN THIS CASE
       }
     }
 
@@ -1783,17 +1788,17 @@ EFAElement2D::addEdgeCut(unsigned int edge_id,
         local_embedded = new EFANode(new_node_id, EFANode::N_CATEGORY_EMBEDDED);
         EmbeddedNodes.insert(std::make_pair(new_node_id, local_embedded));
       }
-      _edges[edge_id]->addIntersection(position, local_embedded, edge_node1);
-      if (_edges[edge_id]->numEmbeddedNodes() > 2)
-        EFAError("element edge can't have >2 embedded nodes");
+      _edges[edge_id]->addIntersection(position, local_embedded, edge_node1, cut_plane_idx);
+//      if (_edges[edge_id]->numEmbeddedNodes() > 2)
+//        EFAError("element edge can't have >2 embedded nodes");
     }
 
     // add to frag edge
     if (add2frag)
     {
-      frag_edge->addIntersection(frag_pos, local_embedded, frag_edge_node1);
-      if (frag_edge->numEmbeddedNodes() > 1)
-        EFAError("fragment edge can't have >1 embedded nodes");
+      frag_edge->addIntersection(frag_pos, local_embedded, frag_edge_node1, cut_plane_idx);
+//      if (frag_edge->numEmbeddedNodes() > 1)
+//        EFAError("fragment edge can't have >1 embedded nodes");
     }
   } // IF the input embedded node already exists on this elem edge
 
@@ -1806,7 +1811,7 @@ EFAElement2D::addEdgeCut(unsigned int edge_id,
       if (edge_neighbor->getEdge(neighbor_edge_id)->getNode(0) == edge_node1) // same direction
         EFAError("neighbor edge has the same direction as this edge");
       double neigh_pos = 1.0 - position; // get emb node's postion on neighbor edge
-      edge_neighbor->addEdgeCut(neighbor_edge_id, neigh_pos, local_embedded, EmbeddedNodes, false);
+      edge_neighbor->addEdgeCut(neighbor_edge_id, neigh_pos, local_embedded, EmbeddedNodes, false, cut_plane_idx);
     }
   } // If add_to_neighbor required
 }
@@ -1815,17 +1820,22 @@ void
 EFAElement2D::addNodeCut(unsigned int node_id,
                          EFANode * embedded_permanent_node,
                          std::map<unsigned int, EFANode *> & PermanentNodes,
-                         std::map<unsigned int, EFANode *> & EmbeddedPermanentNodes)
+                         std::map<unsigned int, EFANode *> & EmbeddedPermanentNodes,
+						 unsigned int cut_plane_idx)
 {
   EFANode * local_embedded_permanent = NULL;
   EFANode * node = _nodes[node_id];
-  if (embedded_permanent_node) // use the existing embedded node if it was passed in
+  if (embedded_permanent_node)
+  { // use the existing embedded node if it was passed in
     local_embedded_permanent = embedded_permanent_node;
+    local_embedded_permanent->addCutPlaneID(cut_plane_idx);
+  }
 
   if (node->category() == EFANode::N_CATEGORY_PERMANENT)
   {
     node->setCategory(EFANode::N_CATEGORY_EMBEDDED_PERMANENT);
     local_embedded_permanent = node;
+    local_embedded_permanent->addCutPlaneID(cut_plane_idx);
     EmbeddedPermanentNodes.insert(std::make_pair(node->id(), local_embedded_permanent));
     if (!Efa::deleteFromMap(PermanentNodes, local_embedded_permanent, false))
       EFAError("Attempted to delete node: ",
@@ -1834,10 +1844,12 @@ EFAElement2D::addNodeCut(unsigned int node_id,
   }
 }
 
+//WIP: Still needs to tag node with cut plane and add duplicate cuts to same node
 bool
 EFAElement2D::addFragmentEdgeCut(unsigned int frag_edge_id,
                                  double position,
-                                 std::map<unsigned int, EFANode *> & EmbeddedNodes)
+                                 std::map<unsigned int, EFANode *> & EmbeddedNodes,
+								 unsigned int cut_plane_idx)
 {
   if (_fragments.size() != 1)
     EFAError("Element: ", _id, " should have only 1 fragment in addFragEdgeIntersection");
@@ -1848,34 +1860,38 @@ EFAElement2D::addFragmentEdgeCut(unsigned int frag_edge_id,
   EFAEdge * frag_edge = getFragmentEdge(0, frag_edge_id); // we're considering this edge
   EFANode * edge_node1 = frag_edge->getNode(0);
   EFANode * edge_node2 = frag_edge->getNode(1);
+  //Fix this to add cut plane to existing node
   if ((std::abs(position) < Xfem::tol && edge_node1->category() == EFANode::N_CATEGORY_EMBEDDED) ||
       (std::abs(1.0 - position) < Xfem::tol &&
        edge_node2->category() == EFANode::N_CATEGORY_EMBEDDED))
     isValidIntersection = false;
 
-  // TODO: do not allow to cut fragment's node
+  // TODO: do not allow to cut fragment's node, can we allow this?
   if (std::abs(position) < Xfem::tol || std::abs(1.0 - position) < Xfem::tol)
     isValidIntersection = false;
 
   // add valid intersection point to an edge
-  if (isValidIntersection)
-  {
-    if (frag_edge->hasIntersection())
-    {
-      if (!frag_edge->hasIntersectionAtPosition(position, edge_node1))
-        EFAError("Attempting to add fragment edge intersection when one already exists with "
-                 "different position.",
-                 " elem: ",
-                 _id,
-                 " edge: ",
-                 frag_edge_id,
-                 " position: ",
-                 position,
-                 " old position: ",
-                 frag_edge->getIntersection(0, edge_node1));
-    }
-    else // blank edge - in fact, it can only be a blank element interior edge
-    {
+//  if (isValidIntersection)
+//  {
+//    if (frag_edge->hasIntersection())
+//    {
+//      if (!frag_edge->hasIntersectionAtPosition(position, edge_node1))
+//      {
+//
+//        EFAError("Attempting to add fragment edge intersection when one already exists with "
+//                 "different position.",
+//                 " elem: ",
+//                 _id,
+//                 " edge: ",
+//                 frag_edge_id,
+//                 " position: ",
+//                 position,
+//                 " old position: ",
+//                 frag_edge->getIntersection(0, edge_node1));
+//      }
+//    }
+//    else // blank edge - in fact, it can only be a blank element interior edge
+//    {
       if (!_fragments[0]->isEdgeInterior(frag_edge_id) ||
           _fragments[0]->isSecondaryInteriorEdge(frag_edge_id))
         EFAError("Attemping to add intersection to an invalid fragment edge. Element: ",
@@ -1885,9 +1901,10 @@ EFAElement2D::addFragmentEdgeCut(unsigned int frag_edge_id,
 
       // create the embedded node and add it to the fragment's boundary edge
       unsigned int new_node_id = Efa::getNewID(EmbeddedNodes);
+      //LOOK HERE to add cut plane id
       local_embedded = new EFANode(new_node_id, EFANode::N_CATEGORY_EMBEDDED);
       EmbeddedNodes.insert(std::make_pair(new_node_id, local_embedded));
-      frag_edge->addIntersection(position, local_embedded, edge_node1);
+      frag_edge->addIntersection(position, local_embedded, edge_node1, cut_plane_idx);
 
       // save this interior embedded node to FaceNodes
       // TODO: for unstructured elements, the following calution gives you inaccurate position of
@@ -1904,11 +1921,11 @@ EFAElement2D::addFragmentEdgeCut(unsigned int frag_edge_id,
       }
       else
         EFAError("elem: ", _id, " cannot get the parametric coords of two end embedded nodes");
-    }
+//    }
     // no need to add intersection for neighbor fragment - if this fragment has a
     // neighbor fragment, the neighbor has already been treated in addEdgeIntersection;
     // for an interior edge, there is no neighbor fragment
-  }
+//  }
 
   return isValidIntersection;
 }
@@ -2066,4 +2083,58 @@ EFAElement2D::getCommonNodes(const EFAElement2D * other_elem) const
   std::set<EFANode *> e2nodes(other_elem->_nodes.begin(), other_elem->_nodes.begin() + _num_edges);
   std::vector<EFANode *> common_nodes = Efa::getCommonElems(e1nodes, e2nodes);
   return common_nodes;
+}
+
+void
+EFAElement2D::addInteriorNode(EFAFaceNode * faceNode)
+{
+  _interior_nodes.push_back(faceNode);
+}
+
+bool
+EFAElement2D::isInteriorNode(EFANode * node, EFAFaceNode & faceNode)
+{
+  for (unsigned int i = 0; i < _interior_nodes.size(); ++i)
+  {
+    if (node == _interior_nodes[i].getNode())
+    {
+      faceNode = _interior_nodes[i];
+      return true;
+    }
+  }
+  return false;
+}
+
+bool
+EFAElement2D::getNodeParametricCoordinate(EFANode * node, std::vector<double> & para_coor) const
+{
+  EFAFaceNode * faceNode;
+  if (isInteriorNode(node, faceNode))
+  {
+    para_coor[0] = faceNode.getParametricCoordinates(0);
+    para_coor[1] = faceNode.getParametricCoordinates(1);
+    return true;
+  }
+  else
+  {
+    // get the parametric coords of a node in an element edge
+    unsigned int edge_id = std::numeric_limits<unsigned int>::max();
+    bool edge_found = false;
+    for (unsigned int i = 0; i < _num_edges; ++i)
+    {
+      if (_edges[i]->containsNode(node))
+      {
+        edge_id = i;
+        edge_found = true;
+        break;
+      }
+    }
+    if (edge_found)
+    {
+      double rel_dist = _edges[edge_id]->distanceFromNode1(node);
+      double xi_1d = 2.0 * rel_dist - 1.0; // translate to [-1,1] parent coord syst
+      mapParametricCoordFrom1Dto2D(edge_id, xi_1d, para_coor);
+    }
+    return edge_found;
+  }
 }

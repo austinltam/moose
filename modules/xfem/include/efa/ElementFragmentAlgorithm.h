@@ -49,9 +49,9 @@ public:
 
   void updateEdgeNeighbors();
   void initCrackTipTopology();
-  void addElemEdgeIntersection(unsigned int elemid, unsigned int edgeid, double position);
-  void addElemNodeIntersection(unsigned int elemid, unsigned int nodeid);
-  bool addFragEdgeIntersection(unsigned int elemid, unsigned int frag_edge_id, double position);
+  void addElemEdgeIntersection(unsigned int elemid, unsigned int edgeid, double position, unsigned int cut_plane_idx);
+  void addElemNodeIntersection(unsigned int elemid, unsigned int nodeid, unsigned int cut_plane_idx);
+  bool addFragEdgeIntersection(unsigned int elemid, unsigned int frag_edge_id, double position, unsigned int cut_plane_idx);
   void addElemFaceIntersection(unsigned int elemid,
                                unsigned int faceid,
                                std::vector<unsigned int> edgeid,

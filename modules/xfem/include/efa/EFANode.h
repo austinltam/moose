@@ -29,6 +29,8 @@ private:
   N_CATEGORY _category;
   unsigned int _id;
   EFANode * _parent;
+  std::vector <unsigned int> _cut_plane_id;
+  std::vector <unsigned int> _past_cut_plane_id;
 
 public:
   std::string idCatString();
@@ -37,4 +39,11 @@ public:
   void setCategory(EFANode::N_CATEGORY category);
   EFANode * parent() const;
   void removeParent();
+  unsigned int getCutPlaneIDs();
+  void addCutPlaneID(unsigned int cutPlaneID);
+  bool hasCutPlaneID(unsigned int CutPlaneID);
+  void moveLastCutPlaneIDtoPast();
+  unsigned int getLastPlaneCutID();
+  bool hasCut();
+  bool hasSameCut(EFANode otherNode);
 };

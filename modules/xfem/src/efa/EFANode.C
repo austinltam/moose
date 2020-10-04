@@ -61,3 +61,69 @@ EFANode::setCategory(EFANode::N_CATEGORY category)
 {
   _category = category;
 }
+
+std::vector<unsigned int>
+EFANode::getCutPlaneIDs()
+{
+	return _cut_plane_id;
+}
+
+void
+EFANode::addCutPlaneID(unsigned int cutPlaneID)
+{
+	_cut_plane_id.pushback(cutPlaneID);
+}
+
+bool
+EFANode::hasCutPlaneID(unsigned int cutPlaneID)
+{
+	bool has_Cut = false;
+    for (unsigned int i = 0; i < _cut_plane_id.size(); ++i)
+	{
+	  if (cutPlaneID == _cut_plane_id[i])
+	  {
+	    has_Cut = true;
+	    break;
+	  }
+	}
+    return has_Cut;
+}
+
+void
+EFANode::moveCutPlaneIDtoPast(unsigned int cutPlaneID)
+{
+  for(unsigned int i = 0; i < _cut_plane_id.size(); ++i)
+  {
+    if(_cut_plane_id[i] == cutPlaneID)
+    {
+      _past_cut_plane_id.pushback(_cut_plane_id[i]);
+      _cut_plane_id.erase(i);
+      return;
+    }
+  }
+}
+
+unsigned int
+EFANode::getLastCutPlaneID()
+{
+  return _cut_plane_id.back();
+}
+
+bool
+EFANode::hasCut()
+{
+  return (_cut_plane_id.size()>0) ? (true) : (false);
+}
+
+bool
+EFANode::hasSameCut(EFANode otherNode)
+{
+  for (unsigned int i = 0; i < _cut_plane_id.size(); ++i)
+  {
+    if (otherNode.hasCutPlaneID(_cut_plane_id[i]))
+    {
+      return true;
+    }
+  }
+  return false;
+}

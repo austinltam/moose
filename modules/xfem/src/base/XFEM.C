@@ -387,6 +387,8 @@ XFEM::markCutEdgesByGeometry()
 
   for (const auto & gme : _geom_marked_elems_2d)
   {
+	unsigned int cut_plane_idx = 0;
+
     for (const auto & gmei : gme.second)
     {
       EFAElement2D * EFAElem = getEFAElem2D(gme.first);
@@ -398,14 +400,15 @@ XFEM::markCutEdgesByGeometry()
         {
           _efa_mesh.addElemEdgeIntersection(gme.first->id(),
                                             gmei._elem_cut_edges[i]._host_side_id,
-                                            gmei._elem_cut_edges[i]._distance);
+                                            gmei._elem_cut_edges[i]._distance,
+											cut_plane_idx);
           marked_edges = true;
         }
       }
 
       for (unsigned int i = 0; i < gmei._elem_cut_nodes.size(); ++i) // mark element edges
       {
-        _efa_mesh.addElemNodeIntersection(gme.first->id(), gmei._elem_cut_nodes[i]._host_id);
+        _efa_mesh.addElemNodeIntersection(gme.first->id(), gmei._elem_cut_nodes[i]._host_id, cut_plane_idx);
         marked_nodes = true;
       }
 
@@ -417,7 +420,7 @@ XFEM::markCutEdgesByGeometry()
         {
           if (_efa_mesh.addFragEdgeIntersection(gme.first->id(),
                                                 gmei._frag_cut_edges[i]._host_side_id,
-                                                gmei._frag_cut_edges[i]._distance))
+                                                gmei._frag_cut_edges[i]._distance, cut_plane_idx))
           {
             marked_edges = true;
             if (!isElemAtCrackTip(gme.first))
@@ -425,6 +428,9 @@ XFEM::markCutEdgesByGeometry()
           }
         }
       }
+
+    ++cut_plane_idx;
+
     }
   }
 
@@ -639,7 +645,7 @@ XFEM::markCutEdgesByState(Real time)
             !CEMElem->getEdge(orig_cut_side_id)->hasIntersection())
         {
           orig_cut_distance = 0.5;
-          _efa_mesh.addElemEdgeIntersection(elem->id(), orig_cut_side_id, orig_cut_distance);
+          _efa_mesh.addElemEdgeIntersection(elem->id(), orig_cut_side_id, orig_cut_distance, cut_plane_idx);
           orig_edge = CEMElem->getEdge(orig_cut_side_id);
           orig_node = orig_edge->getEmbeddedNode(0);
           // get a virtual crack tip direction
@@ -676,7 +682,7 @@ XFEM::markCutEdgesByState(Real time)
           continue; // skip this elem if more than one interior edges found (i.e. elem's been cut
                     // twice)
         orig_cut_distance = 0.5;
-        _efa_mesh.addFragEdgeIntersection(elem->id(), orig_cut_side_id, orig_cut_distance);
+        _efa_mesh.addFragEdgeIntersection(elem->id(), orig_cut_side_id, orig_cut_distance, cut_plane_idx);
         orig_edge = CEMElem->getFragmentEdge(0, orig_cut_side_id);
         orig_node = orig_edge->getEmbeddedNode(0); // must be an interior embedded node
         Point elem_center(0.0, 0.0, 0.0);
@@ -762,7 +768,7 @@ XFEM::markCutEdgesByState(Real time)
     if (edge_cut)
     {
       if (!_use_crack_growth_increment)
-        _efa_mesh.addElemEdgeIntersection(elem->id(), edge_id_keep, distance_keep);
+        _efa_mesh.addElemEdgeIntersection(elem->id(), edge_id_keep, distance_keep, cut_plane_idx);
       else
       {
         Point growth_direction(0.0, 0.0, 0.0);
@@ -798,7 +804,7 @@ XFEM::markCutEdgesByState(Real time)
                     elem_cut_edges[i]._host_side_id)) // must not be phantom edge
             {
               _efa_mesh.addElemEdgeIntersection(
-                  elem->id(), elem_cut_edges[i]._host_side_id, elem_cut_edges[i]._distance);
+                  elem->id(), elem_cut_edges[i]._host_side_id, elem_cut_edges[i]._distance, cut_plane_idx);
             }
           }
         }
@@ -820,7 +826,7 @@ XFEM::markCutEdgesByState(Real time)
                   crack_tip_origin, normal, edge_ends[0], edge_ends[1], distance) &&
               (!CEMElem->getFragment(0)->isSecondaryInteriorEdge(i)))
           {
-            if (_efa_mesh.addFragEdgeIntersection(elem->id(), edge_id_keep, distance_keep))
+            if (_efa_mesh.addFragEdgeIntersection(elem->id(), edge_id_keep, distance_keep, cut_plane_idx))
               if (!isElemAtCrackTip(elem))
                 _has_secondary_cut = true;
             break;

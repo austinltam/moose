@@ -115,17 +115,24 @@ public:
                   double position,
                   EFANode * embedded_node,
                   std::map<unsigned int, EFANode *> & EmbeddedNodes,
-                  bool add_to_neighbor);
+                  bool add_to_neighbor,
+				  unsigned int cut_plane_idx);
   void addNodeCut(unsigned int node_id,
                   EFANode * embedded_permanent_node,
                   std::map<unsigned int, EFANode *> & PermanentNodes,
-                  std::map<unsigned int, EFANode *> & EmbeddedPermanentNodes);
+                  std::map<unsigned int, EFANode *> & EmbeddedPermanentNodes,
+				  unsigned int cut_plane_idx);
   bool addFragmentEdgeCut(unsigned int frag_edge_id,
                           double position,
-                          std::map<unsigned int, EFANode *> & EmbeddedNodes);
+                          std::map<unsigned int, EFANode *> & EmbeddedNodes,
+						  unsigned int cut_plane_idx);
   std::vector<EFAFragment2D *> branchingSplit(std::map<unsigned int, EFANode *> & EmbeddedNodes);
 
   std::vector<EFANode *> getCommonNodes(const EFAElement2D * other_elem) const;
+
+  void addInteriorNode(EFAFaceNode * faceNode);
+  bool isInteriorNode(EFANode * node, EFAFaceNode & faceNode) const;
+  bool getNodeParametricCoordinate(EFANode * node, std::vector<double> & para_coor) const;
 
 private:
   // given the 1D parent coord of a point in an 2D element edge, translate it to 2D parametric

@@ -37,7 +37,7 @@ public:
                       std::vector<double> & master_weights) const;
   //  bool operator < (const EFAEdge & other) const;
 
-  void addIntersection(double position, EFANode * embedded_node_tmp, EFANode * from_node);
+  void addIntersection(double position, EFANode * embedded_node_tmp, EFANode * from_node, unsigned int cut_plane_idx);
   void resetIntersection(double position, EFANode * embedded_node_tmp, EFANode * from_node);
   void copyIntersection(const EFAEdge & other, unsigned int from_node_id);
   EFANode * getNode(unsigned int index) const;
@@ -47,6 +47,7 @@ public:
 
   bool hasIntersection() const;
   bool hasIntersectionAtPosition(double position, EFANode * from_node) const;
+//  bool hasIntersectionCutPlane(unsigned int cutPlaneID) const;
   double getIntersection(unsigned int emb_id, EFANode * from_node) const;
   double distanceFromNode1(EFANode * node) const;
   bool isEmbeddedNode(const EFANode * node) const;

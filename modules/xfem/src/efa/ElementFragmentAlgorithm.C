@@ -211,7 +211,8 @@ ElementFragmentAlgorithm::initCrackTipTopology()
 void
 ElementFragmentAlgorithm::addElemEdgeIntersection(unsigned int elemid,
                                                   unsigned int edgeid,
-                                                  double position)
+                                                  double position,
+												  unsigned int cut_plane_idx)
 {
   // this method is called when we are marking cut edges
   std::map<unsigned int, EFAElement *>::iterator eit = _elements.find(elemid);
@@ -221,11 +222,11 @@ ElementFragmentAlgorithm::addElemEdgeIntersection(unsigned int elemid,
   EFAElement2D * curr_elem = dynamic_cast<EFAElement2D *>(eit->second);
   if (!curr_elem)
     EFAError("addElemEdgeIntersection: elem ", elemid, " is not of type EFAelement2D");
-  curr_elem->addEdgeCut(edgeid, position, NULL, _embedded_nodes, true);
+  curr_elem->addEdgeCut(edgeid, position, NULL, _embedded_nodes, true, cut_plane_idx);
 }
 
 void
-ElementFragmentAlgorithm::addElemNodeIntersection(unsigned int elemid, unsigned int nodeid)
+ElementFragmentAlgorithm::addElemNodeIntersection(unsigned int elemid, unsigned int nodeid, unsigned int cut_plane_idx)
 {
   // this method is called when we are marking cut nodes
   std::map<unsigned int, EFAElement *>::iterator eit = _elements.find(elemid);
@@ -238,13 +239,14 @@ ElementFragmentAlgorithm::addElemNodeIntersection(unsigned int elemid, unsigned 
 
   // Only add cut node when the curr_elem does not have any fragment
   if (curr_elem->numFragments() == 0)
-    curr_elem->addNodeCut(nodeid, NULL, _permanent_nodes, _embedded_permanent_nodes);
+    curr_elem->addNodeCut(nodeid, NULL, _permanent_nodes, _embedded_permanent_nodes, cut_plane_idx);
 }
 
 bool
 ElementFragmentAlgorithm::addFragEdgeIntersection(unsigned int elemid,
                                                   unsigned int frag_edge_id,
-                                                  double position)
+                                                  double position,
+												  unsigned int cut_plane_idx)
 {
   // N.B. this method must be called after addEdgeIntersection
   std::map<unsigned int, EFAElement *>::iterator eit = _elements.find(elemid);
@@ -254,7 +256,7 @@ ElementFragmentAlgorithm::addFragEdgeIntersection(unsigned int elemid,
   EFAElement2D * elem = dynamic_cast<EFAElement2D *>(eit->second);
   if (!elem)
     EFAError("addFragEdgeIntersection: elem ", elemid, " is not of type EFAelement2D");
-  return elem->addFragmentEdgeCut(frag_edge_id, position, _embedded_nodes);
+  return elem->addFragmentEdgeCut(frag_edge_id, position, _embedded_nodes, cut_plane_idx);
 }
 
 void
