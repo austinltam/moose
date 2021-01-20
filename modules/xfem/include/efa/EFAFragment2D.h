@@ -62,8 +62,8 @@ public:
                                    const std::vector<double> & cutting_line_point1,
                                    const std::vector<double> & cutting_line_point2,
                                    std::vector<double> & intersect_Point);
-  Real crossProduct2D(const std::vector<double> & point_a,
-                      const std::vector<double> & point_b) const;
+  double crossProduct2D(const std::vector<double> & point_a,
+                        const std::vector<double> & point_b) const;
   double distanceBetweenPoints(const std::vector<double> & point_a,
                                const std::vector<double> & point_b) const;
   std::vector<EFAFragment2D *> split();

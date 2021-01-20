@@ -17,6 +17,7 @@
 #include "EFAFaceNode.h"
 #include "EFAFuncs.h"
 #include "EFAError.h"
+#include "XFEMFuncs.h"
 
 EFAFragment2D::EFAFragment2D(EFAElement2D * host,
                              bool create_boundary_edges,
@@ -785,8 +786,6 @@ EFAFragment2D::split()
 
     new_fragments.push_back(new_frag);
   }
-  else
-    return {this};
 
   return new_fragments;
 }
