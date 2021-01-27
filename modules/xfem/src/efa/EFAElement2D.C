@@ -7,6 +7,8 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
+#include <iostream>
+
 #include "EFAElement2D.h"
 
 #include <iomanip>
@@ -466,12 +468,15 @@ EFAElement2D::clearNeighbors()
 void
 EFAElement2D::setupNeighbors(std::map<EFANode *, std::set<EFAElement *>> & InverseConnectivityMap)
 {
+  std::cout<<"setupNeighbors for Element ID "<<id()<<std::endl;
   findGeneralNeighbors(InverseConnectivityMap);
   for (unsigned int eit2 = 0; eit2 < _general_neighbors.size(); ++eit2)
   {
     EFAElement2D * neigh_elem = dynamic_cast<EFAElement2D *>(_general_neighbors[eit2]);
     if (!neigh_elem)
       EFAError("neighbor_elem is not of EFAelement2D type");
+
+    std::cout<<"Neighbor ID is "<<neigh_elem->id()<<std::endl;
 
     std::vector<EFANode *> common_nodes = getCommonNodes(neigh_elem);
     if (common_nodes.size() >= 2)
@@ -593,12 +598,20 @@ EFAElement2D::initCrackTip(std::set<EFAElement *> & CrackTipElements)
 unsigned int
 EFAElement2D::getCrackTipSplitElementID() const
 {
+  std::cout<<"IN ELEMENT ID "<<id()<<std::endl;
   if (isCrackTipElement())
   {
+    std::cout<<"isCrackTipSplitElementID is TRUE"<<std::endl;
     for (unsigned int edge_iter = 0; edge_iter < _num_edges; ++edge_iter)
     {
+      std::cout<<"edge_iter is "<<edge_iter<<" and _num_edges is "<<_num_edges<<std::endl;
+      std::cout<<"_edge_neighbors[edge_iter].size()=="<<_edge_neighbors[edge_iter].size()<<std::endl;
+      std::cout<<"_edges[edge_iter]->hasIntersection() is "<<_edges[edge_iter]->hasIntersection()<<std::endl;
       if ((_edge_neighbors[edge_iter].size() == 2) && (_edges[edge_iter]->hasIntersection()))
       {
+        std::cout<<"Edge neighbors size is 2 and edges hasIntersection"<<std::endl;
+        std::cout<<"_edge_neighbors[edge_iter][0]="<<_edge_neighbors[edge_iter][0]<<std::endl;
+        std::cout<<"isCrackTipSplit is "<<_edge_neighbors[edge_iter][0]->isCrackTipSplit()<<std::endl;
         if (_edge_neighbors[edge_iter][0] != NULL &&
             _edge_neighbors[edge_iter][0]->isCrackTipSplit())
         {
@@ -810,6 +823,7 @@ void
 EFAElement2D::updateFragments(const std::set<EFAElement *> & CrackTipElements,
                               std::map<unsigned int, EFANode *> & EmbeddedNodes)
 {
+  std::cout<<"udpateFragments on Element ID "<<id()<<std::endl;
   // combine the crack-tip edges in a fragment to a single intersected edge
   std::set<EFAElement *>::iterator sit;
   sit = CrackTipElements.find(this);
@@ -858,6 +872,7 @@ EFAElement2D::updateFragments(const std::set<EFAElement *> & CrackTipElements,
     pairSoloNodes();
 
   // split one fragment into one, two or three new fragments
+  std::cout<<"Num_cut_frag_edges is "<<num_cut_frag_edges<<std::endl;
   std::vector<EFAFragment2D *> new_frags;
   if (num_cut_frag_edges == 3)
     new_frags = branchingSplit(EmbeddedNodes);
@@ -1013,8 +1028,8 @@ EFAElement2D::createChild(const std::set<EFAElement *> & CrackTipElements,
   if (_fragments.size() > 1 || shouldDuplicateForCrackTip(CrackTipElements) ||
       shouldDuplicateForCutNodeElement)
   {
-    if (_fragments.size() > 3)
-      EFAError("More than 3 fragments not yet supported");
+//    if (_fragments.size() > 3)
+//      EFAError("More than 3 fragments not yet supported");
 
     // set up the children
     ParentElements.push_back(this);
@@ -1398,6 +1413,9 @@ EFAElement2D::printElement(std::ostream & ostream) const
 EFAFragment2D *
 EFAElement2D::getFragment(unsigned int frag_id) const
 {
+  std::cout<<"getFragment checking Element ID "<<id()<<std::endl;
+  std::cout<<"Fragment size is "<<_fragments.size()<<std::endl;
+  std::cout<<"Frag_id is "<<frag_id<<std::endl;
   if (frag_id < _fragments.size())
     return _fragments[frag_id];
   else
@@ -1591,6 +1609,7 @@ EFAElement2D::getEdgeNeighbor(unsigned int edge_id, unsigned int neighbor_id) co
 bool
 EFAElement2D::fragmentHasTipEdges() const
 {
+  std::cout<<"fragmentHasTipEdges is checking Element ID "<<id()<<std::endl;
   bool has_tip_edges = false;
   if (_fragments.size() == 1)
   {
@@ -1601,10 +1620,11 @@ EFAElement2D::fragmentHasTipEdges() const
       {
         for (unsigned int j = 0; j < _fragments[0]->numEdges(); ++j)
         {
+          std::cout<<"Number of edges is "<<j<<std::endl;
           if (_edges[i]->containsEdge(*_fragments[0]->getEdge(j)))
             num_frag_edges += 1;
         } // j
-        if (num_frag_edges == 2)
+        if (num_frag_edges == 2)//TODO: need to update this since multiple cuts could terminate in the a single edge
         {
           has_tip_edges = true;
           break;
@@ -1612,6 +1632,7 @@ EFAElement2D::fragmentHasTipEdges() const
       }
     } // i
   }
+  std::cout<<"fragmentHasTipEdges returns "<<has_tip_edges<<std::endl;
   return has_tip_edges;
 }
 
@@ -1736,15 +1757,14 @@ EFAElement2D::addEdgeCut(unsigned int edge_id,
     EFANode * old_emb = _edges[edge_id]->getEmbeddedNode(emb_id);
     if (embedded_node && embedded_node != old_emb)
     {
-      addNodeToCutPlaneIdx(old_emb, getCurrentCutPlaneIdx());
-      //      EFAError("Attempting to add edge intersection when one already exists with different
-      //      node.",
-      //               " elem: ",
-      //               _id,
-      //               " edge: ",
-      //               edge_id,
-      //               " position: ",
-      //               position);
+//      addNodeToCutPlaneIdx(old_emb, getCurrentCutPlaneIdx());
+            EFAError("Attempting to add edge intersection when one already exists with different node.",
+                     " elem: ",
+                     _id,
+                     " edge: ",
+                     edge_id,
+                     " position: ",
+                     position);
     }
     local_embedded = old_emb;
   }
@@ -2172,7 +2192,7 @@ EFAElement2D::addNodeToCutPlaneIdx(EFANode * node, unsigned int cut)
       break;
     }
   }
-  if (index == std::numeric_limits<unsigned int>::max())
+  if (index == std::numeric_limits<unsigned int>::max())//if not found make a new index
   {
     _cut_plane_idx.push_back(cut);
     _cut_plane_nodes.push_back({node});
@@ -2188,6 +2208,29 @@ EFAElement2D::addNodeToCutPlaneIdx(EFANode * node, unsigned int cut)
       addNodeToCutPlaneIdx(node, cut + 1);
     else
       _cut_plane_nodes[index].push_back(node);
+  }
+}
+
+void
+EFAElement2D::addForceNodeToCutPlaneIdx(EFANode * node, unsigned int cut)//allows to override the limit of two nodes per cut plane idx
+{
+  unsigned int index = std::numeric_limits<unsigned int>::max();
+  for (unsigned int cutplaneidx = 0; cutplaneidx < _cut_plane_nodes.size(); ++cutplaneidx)
+  {
+    if (_cut_plane_idx[cutplaneidx] == cut)
+    {
+      index = cutplaneidx;
+      break;
+    }
+  }
+  if (index == std::numeric_limits<unsigned int>::max())//if not found make a new index
+  {
+    _cut_plane_idx.push_back(cut);
+    _cut_plane_nodes.push_back({node});
+  }
+  else
+  {
+    _cut_plane_nodes[index].push_back(node);
   }
 }
 
