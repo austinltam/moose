@@ -138,6 +138,7 @@ public:
   void getNewCutPlaneIdx();
   unsigned int getCurrentCutPlaneIdx();
   void addNodeToCutPlaneIdx(EFANode * node, unsigned int cut);
+  //  void addForceNodeToCutPlaneIdx(EFANode * node, unsigned int cut);
   void reassignNodeToCutPlaneIdx(EFANode * node, unsigned int cut);
   //  void addNodeToUnknownCutPlaneIdx(EFANode * node);
   std::vector<std::vector<EFANode *>> getCutPlaneNodes();

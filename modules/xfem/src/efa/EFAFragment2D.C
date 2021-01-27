@@ -341,8 +341,6 @@ EFAFragment2D::split(std::map<unsigned int, EFANode *> & EmbeddedNodes,
                      std::vector<unsigned int> frag_cut_plane_idx,
                      std::vector<std::vector<EFANode *>> frag_cut_plane_nodes)
 {
-  std::cout<<std::endl;
-  std::cout<<"Advanced Split called on Element ID "<<_host_elem->id()<<std::endl;
   // For 2D only not working in 3D
   // This method will split one existing fragment into multiple
   // new fragments and return them.
@@ -377,25 +375,15 @@ EFAFragment2D::split(std::map<unsigned int, EFANode *> & EmbeddedNodes,
     cut_plane_id = all_cut_plane_idx.back(); // chosen cut plane id
     all_cut_plane_idx.pop_back();
 
-    std::cout<<"Evaluating cut plane id "<<cut_plane_id<<std::endl;
-
     chosen_cut_plane_pair = all_cut_plane_nodes.back(); // chosen cut plane node(s)
     all_cut_plane_nodes.pop_back();
 
     cut_plane_node_pairs = all_cut_plane_nodes;
 
-    std::cout<<"Chosen cut plane size is "<<chosen_cut_plane_pair.size()<<std::endl;
-    std::cout<<"Chosen cut plane node is are ";
-    for (unsigned int k = 0; k < chosen_cut_plane_pair.size(); ++k)
-      std::cout<<" "<<chosen_cut_plane_pair[k]->id()<<" ";
-    std::cout<<std::endl;
-
     // start looking through nodes
     for (unsigned int iedge = 0; iedge < _boundary_edges.size(); ++iedge)
     {
       fragment_nodes[frag_number].push_back(_boundary_edges[iedge]->getNode(0));
-
-      std::cout<<"Comparing node on boundary with ID "<<_boundary_edges[iedge]->getNode(0)->id()<<std::endl;
 
       bool frag_switch = false;
       if (_host_elem->hasSameCut(_boundary_edges[iedge]->getNode(0),
@@ -403,14 +391,15 @@ EFAFragment2D::split(std::map<unsigned int, EFANode *> & EmbeddedNodes,
       {
         if (!frag0_first_cut_pos_found)
         {
-          frag0_first_cut_pos = fragment_nodes[0].size();//record position for insertion of intersection nodes
+          frag0_first_cut_pos =
+              fragment_nodes[0].size(); // record position for insertion of intersection nodes
           frag0_first_cut_pos_found = true;
         }
         frag_switch = true;
         ++node_cut_count;
         frag_number = 1 - frag_number; // Toggle between 0 and 1
         fragment_nodes[frag_number].push_back(_boundary_edges[iedge]->getNode(0));
-//        _host_elem->removeCutPlaneNode(_boundary_edges[iedge]->getNode(0), cut_plane_id);
+        //        _host_elem->removeCutPlaneNode(_boundary_edges[iedge]->getNode(0), cut_plane_id);
       }
       // note the cut plane ids from nodes to determine if fragments need split again
       bool moreCuts = false;
@@ -437,20 +426,20 @@ EFAFragment2D::split(std::map<unsigned int, EFANode *> & EmbeddedNodes,
         bool frag_switch = false;
         fragment_nodes[frag_number].push_back(_boundary_edges[iedge]->getEmbeddedNode(i));
 
-        std::cout<<"Comparing node on EDGE with ID "<<_boundary_edges[iedge]->getEmbeddedNode(i)->id()<<std::endl;
-
         if (_host_elem->hasSameCut(_boundary_edges[iedge]->getEmbeddedNode(i), cut_plane_id))
         {
           if (!frag0_first_cut_pos_found)
           {
-            frag0_first_cut_pos = fragment_nodes[0].size();//record position for intersection nodes
+            frag0_first_cut_pos = fragment_nodes[0].size(); // record position for intersection
+                                                            // nodes
             frag0_first_cut_pos_found = true;
           }
           frag_switch = true;
           ++edge_cut_count;
           frag_number = 1 - frag_number; // Toggle between 0 and 1
           fragment_nodes[frag_number].push_back(_boundary_edges[iedge]->getEmbeddedNode(i));
-//          _host_elem->removeCutPlaneNode(_boundary_edges[iedge]->getEmbeddedNode(i), cut_plane_id);
+          //          _host_elem->removeCutPlaneNode(_boundary_edges[iedge]->getEmbeddedNode(i),
+          //          cut_plane_id);
         }
         // note the cut plane ids from nodes to determine if fragments need split again
         bool moreCuts = false;
@@ -472,7 +461,7 @@ EFAFragment2D::split(std::map<unsigned int, EFANode *> & EmbeddedNodes,
       }
     }
 
-    //remove chosen cut nodes from host if they were found
+    // remove chosen cut nodes from host if they were found
     if ((edge_cut_count + node_cut_count) == chosen_cut_plane_pair.size())
     {
       for (unsigned int i = 0; i < chosen_cut_plane_pair.size(); ++i)
@@ -536,20 +525,26 @@ EFAFragment2D::split(std::map<unsigned int, EFANode *> & EmbeddedNodes,
             EFANode * embedded_node = new EFANode(new_node_id, EFANode::N_CATEGORY_EMBEDDED);
             EmbeddedNodes.insert(std::make_pair(new_node_id, embedded_node));
 
-            //add node to cut planes since it now had the intersecting cut plane id
-            //must reassign second intersecting node to new cut plane to make each a new pair with the intersection point
-            _host_elem->getNewCutPlaneIdx();//new cut plane for new pair
-            _host_elem->reassignNodeToCutPlaneIdx(cut_plane_node_pairs[id][1], _host_elem->getCurrentCutPlaneIdx());//separate the old pair
-            _host_elem->addNodeToCutPlaneIdx(embedded_node, all_cut_plane_idx[id]);//make pair with embedded node and node 0 is old cut plane
-            _host_elem->addNodeToCutPlaneIdx(embedded_node, _host_elem->getCurrentCutPlaneIdx());//make pair with embedded node and node 1 in new cut plane
-//            _host_elem->addForceNodeToCutPlaneIdx(embedded_node, _host_elem->getCurrentCutPlaneIdx());//add extra listing with embedded node in new cut plane since it could be depleted by the other fragment checking it first
-
-            std::cout<<"New Intersection Node added with ID "<<embedded_node->id()<<std::endl;
+            // add node to cut planes since it now had the intersecting cut plane id
+            // must reassign second intersecting node to new cut plane to make each a new pair with
+            // the intersection point
+            _host_elem->getNewCutPlaneIdx(); // new cut plane for new pair
+            _host_elem->reassignNodeToCutPlaneIdx(
+                cut_plane_node_pairs[id][1],
+                _host_elem->getCurrentCutPlaneIdx()); // separate the old pair
+            _host_elem->addNodeToCutPlaneIdx(
+                embedded_node,
+                all_cut_plane_idx[id]); // make pair with embedded node and node 0 is old cut plane
+            _host_elem->addNodeToCutPlaneIdx(
+                embedded_node, _host_elem->getCurrentCutPlaneIdx()); // make pair with embedded node
+                                                                     // and node 1 in new cut plane
+            //            _host_elem->addForceNodeToCutPlaneIdx(embedded_node,
+            //            _host_elem->getCurrentCutPlaneIdx());//add extra listing with embedded
+            //            node in new cut plane since it could be depleted by the other fragment
+            //            checking it first
 
             all_cut_plane_idx = _host_elem->getCutPlaneIndices();
             all_cut_plane_nodes = _host_elem->getCutPlaneNodes();
-
-//            std::cout<<"all_cut_plane"
 
             EFAFaceNode * intersectionFaceNode =
                 new EFAFaceNode(embedded_node, intersection_point[0], intersection_point[1]);
@@ -558,10 +553,11 @@ EFAFragment2D::split(std::map<unsigned int, EFANode *> & EmbeddedNodes,
               allIntersectionFaceNodes.push_back(intersectionFaceNode);
             else
             {
-              for (unsigned int position = 0; position < allIntersectionFaceNodes.size(); ++position)
+              for (unsigned int position = 0; position < allIntersectionFaceNodes.size();
+                   ++position)
               {
-                // insert intersection nodes based on distance from chosen cut plane node [0] so it is
-                // easy to add them correctly to each fragment
+                // insert intersection nodes based on distance from chosen cut plane node [0] so it
+                // is easy to add them correctly to each fragment
                 std::vector<double> current_node_pos = {
                     allIntersectionFaceNodes[position]->getParametricCoordinates(0),
                     allIntersectionFaceNodes[position]->getParametricCoordinates(1)};
@@ -588,19 +584,19 @@ EFAFragment2D::split(std::map<unsigned int, EFANode *> & EmbeddedNodes,
           fragment_nodes[1].push_back(allIntersectionFaceNodes[int_id]->getNode());
       }
     }
-//    else if (chosen_cut_plane_pair.size() > 2)
-//      EFAError("Chosen Cut Plane has more than 2 nodes, size = ", chosen_cut_plane_pair.size());
+    //    else if (chosen_cut_plane_pair.size() > 2)
+    //      EFAError("Chosen Cut Plane has more than 2 nodes, size = ",
+    //      chosen_cut_plane_pair.size());
   }
 
   std::vector<EFAFragment2D *> final_fragments; // final fragments for return
 
-  //only make new fragments if all the chosen nodes were found
+  // only make new fragments if all the chosen nodes were found
   if ((edge_cut_count + node_cut_count) == chosen_cut_plane_pair.size())
   {
     // add nodes to fragments
     if ((edge_cut_count + node_cut_count) > 1) // any two cuts case
     {
-      std::cout<<"Edge_cut_count + node_cut_count is "<<edge_cut_count + node_cut_count<<std::endl;
       for (unsigned int frag_idx = 0; frag_idx < 2; ++frag_idx) // Create 2 fragments
       {
         auto & this_frag_nodes = fragment_nodes[frag_idx];
@@ -616,13 +612,10 @@ EFAFragment2D::split(std::map<unsigned int, EFANode *> & EmbeddedNodes,
 
           new_fragments.push_back(new_frag);
         }
-        else
-          std::cout<<"An Edge was CUT"<<std::endl;
       }
     }
     else if (edge_cut_count == 1) // single edge cut case
     {
-      std::cout<<"Edge cut count is 1"<<std::endl;
       EFAFragment2D * new_frag = new EFAFragment2D(_host_elem, false, NULL);
       for (unsigned int inode = 0; inode < fragment_nodes[0].size() - 1;
            inode++) // assemble fragment part 1
@@ -639,7 +632,6 @@ EFAFragment2D::split(std::map<unsigned int, EFANode *> & EmbeddedNodes,
     }
     else if (node_cut_count == 1) // single node cut case
     {
-      std::cout<<"Node cut count is 1"<<std::endl;
       EFAFragment2D * new_frag = new EFAFragment2D(_host_elem, false, NULL);
       for (unsigned int iedge = 0; iedge < _boundary_edges.size(); ++iedge)
       {
@@ -650,24 +642,18 @@ EFAFragment2D::split(std::map<unsigned int, EFANode *> & EmbeddedNodes,
 
       new_fragments.push_back(new_frag);
     }
-    else
-      std::cout<<"No cuts found"<<std::endl;
   }
-  else//if the correct number of chosen nodes were not found call again lookin for other nodes
+  else // if the correct number of chosen nodes were not found call again lookin for other nodes
     return this->split(EmbeddedNodes, all_cut_plane_idx, all_cut_plane_nodes);
-
-  std::cout<<"Output number of new fragments is "<<new_fragments.size()<<std::endl;
 
   for (unsigned int frag_idx = 0; frag_idx < new_fragments.size();
        ++frag_idx) // see if new fragments need split again
   {
-    std::cout<<"Frag idx is "<<frag_idx<<std::endl;
     if (split_frag[frag_idx])
     {
       std::vector<EFAFragment2D *> temp_frags;
       temp_frags =
           new_fragments[frag_idx]->split(EmbeddedNodes, all_cut_plane_idx, all_cut_plane_nodes);
-      std::cout<<"Temp Frags size is "<<temp_frags.size()<<std::endl;
       if (temp_frags.size() == 0)
         final_fragments.push_back(new_fragments[frag_idx]);
       else
@@ -676,14 +662,7 @@ EFAFragment2D::split(std::map<unsigned int, EFANode *> & EmbeddedNodes,
     }
     else
       final_fragments.push_back(new_fragments[frag_idx]);
-    std::cout<<"Final Frags size is "<<final_fragments.size()<<" for frag_idx "<<frag_idx<<std::endl;
   }
-
-//  if(final_fragments.size() == 1 && final_fragments[0] == this)
-//    final_fragments.clear();
-
-  std::cout<<"final fragments return size is "<<final_fragments.size()<<std::endl;
-  std::cout<<std::endl;
 
   return final_fragments;
 }
@@ -771,7 +750,7 @@ EFAFragment2D::distanceBetweenPoints(const std::vector<double> & point_a,
 std::vector<EFAFragment2D *>
 EFAFragment2D::split()
 {
-  std::cout<<"Running NORMAL Split"<<std::endl;
+
   // This method will split one existing fragment into one or two
   // new fragments and return them. Still used for 3D
   // N.B. each boundary each can only have 1 cut at most
@@ -853,12 +832,11 @@ EFAFragment2D::split()
     new_fragments.push_back(new_frag);
   }
 
-
   return new_fragments;
 }
 
-//unsigned int
-//EFAFragment2D::getNumAllCuts() const
+// unsigned int
+// EFAFragment2D::getNumAllCuts() const
 //{
 //  unsigned int num_cut_edges = 0;
 //  std::vector<std::vector<EFANode *>> all_cut_plane_nodes = _host_elem->getCutPlaneNodes();
