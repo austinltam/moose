@@ -844,7 +844,7 @@ EFAElement2D::updateFragments(const std::set<EFAElement *> & CrackTipElements,
 
   unsigned int num_frag_edges = _fragments[0]->numEdges();
 
-  if (num_cut_frag_edges == 0)
+  if (num_cut_frag_edges == 0&& num_cut_nodes == 0)
   {
     if (!isPartial()) // delete the temp frag for an uncut elem
     {
@@ -879,12 +879,10 @@ EFAElement2D::updateFragments(const std::set<EFAElement *> & CrackTipElements,
 
     fragmentSanityCheck(num_frag_edges, num_cut_frag_edges);
   }
-  // else if (num_cut_frag_edges == 1 && num_cut_nodes == 0)
-  //   new_frags = _fragments[0]->split();
   else
   {
     new_frags = _fragments[0]->split(EmbeddedNodes);
-
+    
     delete _fragments[0]; // delete the old fragment
     _fragments.clear();
     _cut_plane_idx.clear();
